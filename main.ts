@@ -259,11 +259,12 @@ export default class FilenameHeadingSyncPlugin extends Plugin {
       if (heading === null) return; // no heading found, nothing to do here
 
       const sanitizedHeading = this.sanitizeHeading(heading.text);
+      const kebabCasedHeading = this.kebabCaseHeading(sanitizedHeading);
       if (
-        sanitizedHeading.length > 0 &&
-        this.sanitizeHeading(file.basename) !== sanitizedHeading
+        kebabCasedHeading.length > 0 &&
+        this.sanitizeHeading(file.basename) !== kebabCasedHeading
       ) {
-        const newPath = `${file.parent?.path}/${sanitizedHeading}.md`;
+        const newPath = `${file.parent?.path}/${kebabCasedHeading}.md`;
         this.isRenameInProgress = true;
         try {
           await this.app.fileManager.renameFile(file, newPath);
@@ -445,6 +446,18 @@ export default class FilenameHeadingSyncPlugin extends Plugin {
     );
     text = text.replace(userIllegalSymbolsRegExp, '');
     return text.trim();
+  }
+
+  kebabCaseHeading(text: string) {
+    const kebab = text
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z\s-]/g, '') // keep letters, spaces, hyphens
+      .trim()
+      .replace(/\s+/g, '-') // spaces → hyphen
+      .replace(/-+/g, '-'); // collapse multiple hyphens
+
+    return kebab;
   }
 
   /**
